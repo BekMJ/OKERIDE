@@ -34,7 +34,7 @@ struct SignInView: View {
                 // Sign In/Register screen
                 VStack(spacing: 24) {
                     // Logo
-                    Image("AppIcon") // Your logo image
+                    Image("Image") // Your logo image
                         .resizable()
                         .scaledToFit()
                         .frame(height: 100)

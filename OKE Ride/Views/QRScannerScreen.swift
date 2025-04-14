@@ -23,9 +23,9 @@ struct QRScannerScreen: View {
                         TextField("Enter code", text: $manualCode)
                             .textFieldStyle(RoundedBorderTextFieldStyle())
                         Button("Submit") {
-                            onScan(manualCode)
-                            presentationMode.wrappedValue.dismiss()
-                        }
+                            DispatchQueue.main.async {
+                                onScan(manualCode)
+                                presentationMode.wrappedValue.dismiss() } }
                         .padding(.horizontal)
                     }
                     .padding()
