@@ -31,6 +31,8 @@
 		55D237CD2D9C736B0032DF30 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 55D237CC2D9C736B0032DF30 /* FirebaseStorage */; };
 		55D237CF2D9C736B0032DF30 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 55D237CE2D9C736B0032DF30 /* FirebaseStorageCombine-Community */; };
 		55D237D12D9C736B0032DF30 /* FirebaseVertexAI in Frameworks */ = {isa = PBXBuildFile; productRef = 55D237D02D9C736B0032DF30 /* FirebaseVertexAI */; };
+		55FC69D82DE762B1009AC911 /* CocoaMQTT in Frameworks */ = {isa = PBXBuildFile; productRef = 55FC69D72DE762B1009AC911 /* CocoaMQTT */; };
+		55FC69DA2DE762B1009AC911 /* CocoaMQTTWebSocket in Frameworks */ = {isa = PBXBuildFile; productRef = 55FC69D92DE762B1009AC911 /* CocoaMQTTWebSocket */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -62,9 +64,11 @@
 				55D237AD2D9C736B0032DF30 /* FirebaseAuth in Frameworks */,
 				55D237A32D9C736B0032DF30 /* FirebaseAnalytics in Frameworks */,
 				55D237B92D9C736B0032DF30 /* FirebaseFirestore in Frameworks */,
+				55FC69D82DE762B1009AC911 /* CocoaMQTT in Frameworks */,
 				55D237C72D9C736B0032DF30 /* FirebaseMessaging in Frameworks */,
 				55D237C32D9C736B0032DF30 /* FirebaseInstallations in Frameworks */,
 				55D237BF2D9C736B0032DF30 /* FirebaseFunctionsCombine-Community in Frameworks */,
+				55FC69DA2DE762B1009AC911 /* CocoaMQTTWebSocket in Frameworks */,
 				55D237AB2D9C736B0032DF30 /* FirebaseAppDistribution-Beta in Frameworks */,
 				55D237A72D9C736B0032DF30 /* FirebaseAnalyticsWithoutAdIdSupport in Frameworks */,
 				55D237C12D9C736B0032DF30 /* FirebaseInAppMessaging-Beta in Frameworks */,
@@ -140,6 +144,8 @@
 				55D237CC2D9C736B0032DF30 /* FirebaseStorage */,
 				55D237CE2D9C736B0032DF30 /* FirebaseStorageCombine-Community */,
 				55D237D02D9C736B0032DF30 /* FirebaseVertexAI */,
+				55FC69D72DE762B1009AC911 /* CocoaMQTT */,
+				55FC69D92DE762B1009AC911 /* CocoaMQTTWebSocket */,
 			);
 			productName = "OKE Ride";
 			productReference = 55D237462D9C6C6E0032DF30 /* OKE Ride.app */;
@@ -171,6 +177,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				55D237A12D9C736B0032DF30 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				55FC69D62DE762B1009AC911 /* XCRemoteSwiftPackageReference "CocoaMQTT" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 55D237472D9C6C6E0032DF30 /* Products */;
@@ -336,6 +343,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "OKE-Ride-Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "";
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -366,6 +378,11 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "OKE-Ride-Info.plist";
+				INFOPLIST_KEY_NSCameraUsageDescription = "";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "";
+				INFOPLIST_KEY_NSLocationAlwaysUsageDescription = "";
+				INFOPLIST_KEY_NSLocationUsageDescription = "";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -414,6 +431,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 11.11.0;
+			};
+		};
+		55FC69D62DE762B1009AC911 /* XCRemoteSwiftPackageReference "CocoaMQTT" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/emqx/CocoaMQTT.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.1.9;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -538,6 +563,16 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 55D237A12D9C736B0032DF30 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseVertexAI;
+		};
+		55FC69D72DE762B1009AC911 /* CocoaMQTT */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55FC69D62DE762B1009AC911 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTT;
+		};
+		55FC69D92DE762B1009AC911 /* CocoaMQTTWebSocket */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 55FC69D62DE762B1009AC911 /* XCRemoteSwiftPackageReference "CocoaMQTT" */;
+			productName = CocoaMQTTWebSocket;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

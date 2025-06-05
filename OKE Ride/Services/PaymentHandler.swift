@@ -1,58 +1,65 @@
-import Foundation
 import PassKit
-import SwiftUI
 
-class PaymentHandler: NSObject, ObservableObject, PKPaymentAuthorizationControllerDelegate {
-    static let shared = PaymentHandler()
-    var paymentController: PKPaymentAuthorizationController?
+class PaymentHandler: NSObject, PKPaymentAuthorizationControllerDelegate {
+  static let shared = PaymentHandler()
+  private var controller: PKPaymentAuthorizationController?
+  private var completion: ((Bool) -> Void)?
+  
+  /// When true, we skip Apple Pay and immediately succeed (for local dev).
+  var useMockPayment: Bool = {
+    #if DEBUG
+    return true
+    #else
+    return false
+    #endif
+  }()
 
+  func startPayment(amount: NSDecimalNumber = 1.00,
+                    label: String = "Scooter Unlock",
+                    merchantId: String = "merchant.com.yourCompany.okeRide",
+                    completion: @escaping (Bool) -> Void) {
+    self.completion = completion
 
-func startPayment() {
-    let paymentRequest = PKPaymentRequest()
-    paymentRequest.merchantIdentifier = "your.test.merchant.id" // Use your test Merchant ID for the sandbox.
-    paymentRequest.supportedNetworks = [.visa, .masterCard, .amex]
-    paymentRequest.merchantCapabilities = .threeDSecure
-    paymentRequest.countryCode = "US"
-    paymentRequest.currencyCode = "USD"
-    
-    paymentRequest.paymentSummaryItems = [
-        PKPaymentSummaryItem(label: "Scooter Rental", amount: NSDecimalNumber(string: "5.00"))
+    // === MOCK PATH ===
+    if useMockPayment {
+      // Simulate a short delay, then succeed
+      DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        print("💰 [MOCK] Payment succeeded")
+        completion(true)
+      }
+      return
+    }
+
+    // === REAL APPLE PAY PATH ===
+    let request = PKPaymentRequest()
+    request.merchantIdentifier   = merchantId
+    request.countryCode          = "US"
+    request.currencyCode         = "USD"
+    request.merchantCapabilities = .capability3DS
+    request.supportedNetworks    = [.visa, .masterCard, .amex]
+    request.paymentSummaryItems  = [
+      PKPaymentSummaryItem(label: label, amount: amount)
     ]
-    
-    if PKPaymentAuthorizationController.canMakePayments() {
-        paymentController = PKPaymentAuthorizationController(paymentRequest: paymentRequest)
-        paymentController?.delegate = self
-        paymentController?.present { presented in
-            if presented {
-                print("Payment authorization presented.")
-            } else {
-                print("Failed to present payment authorization.")
-            }
-        }
-    } else {
-        print("Apple Pay is not available on this device.")
-        // Fallback simulation
-        simulatePaymentSuccess()
+
+    controller = PKPaymentAuthorizationController(paymentRequest: request)
+    controller?.delegate = self
+    controller?.present { success in
+      if !success {
+        print("❌ Payment sheet failed to present")
+        completion(false)
+      }
     }
-}
+  }
 
-func simulatePaymentSuccess() {
-    // This method simulates a successful payment for testing purposes.
-    print("Simulated payment successful!")
-}
-
-func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
-    controller.dismiss {
-        print("Payment controller dismissed.")
-    }
-}
-
-func paymentAuthorizationController(_ controller: PKPaymentAuthorizationController,
+  // MARK: Delegate callbacks
+  func paymentAuthorizationController(_ controller: PKPaymentAuthorizationController,
                                       didAuthorizePayment payment: PKPayment,
-                                      completion: @escaping (PKPaymentAuthorizationResult) -> Void) {
-    // Simulate processing payment.
-    print("Payment authorized. Simulating payment success...")
-    let status: PKPaymentAuthorizationStatus = .success
-    completion(PKPaymentAuthorizationResult(status: status, errors: nil))
-}
+                                      handler handler: @escaping (PKPaymentAuthorizationResult) -> Void) {
+    handler(PKPaymentAuthorizationResult(status: .success, errors: nil))
+    completion?(true)
+  }
+
+  func paymentAuthorizationControllerDidFinish(_ controller: PKPaymentAuthorizationController) {
+    controller.dismiss { }
+  }
 }

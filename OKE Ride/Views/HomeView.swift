@@ -3,6 +3,7 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var scooterVM: ScooterViewModel
     @StateObject var locationManager = LocationManager()
+    @State private var showInvalidCodeAlert = false
 
 
 @State private var showQRScanner = false
@@ -10,20 +11,30 @@ struct HomeView: View {
 @State private var scannedScooter: Scooter? = nil
 @State private var showSideMenu = false
 @State private var selectedScooter: Scooter? = nil  // For displaying details
-
+    @State private var showDetail = false
+    
+    // 1) Enum to represent which alert to show
+    enum ActiveAlert: Identifiable {
+        case unlock, invalid
+        var id: ActiveAlert { self }
+    }
+    
 var body: some View {
     ZStack {
         // Map view (remains fully interactive)
-        MapView(
-            scooters: $scooterVM.scooters,
-            region: $locationManager.region,
-            userLocation: locationManager.userLocation,
-            onScooterSelected: { scooter in
-                // When tapped, set selectedScooter to display the detail overlay.
-                selectedScooter = scooter
-            }
+        RestrictionMapView(
+          scooters: $scooterVM.scooters,
+          region:   $locationManager.region,
+          userLocation: locationManager.userLocation,
+          onScooterSelected: { scooter in
+              scannedScooter = scooter
+              showUnlockPopup = true
+              selectedScooter = scooter
+              showDetail = true
+          }
         )
         .edgesIgnoringSafeArea(.all)
+
         
         // Top-left side menu toggle button.
         VStack {
@@ -71,59 +82,71 @@ var body: some View {
             }
         }
         
-        // Custom bottom overlay for scooter details.
-        if let scooter = selectedScooter {
-            VStack {
-                Spacer()
-                ScooterDetailView(scooter: scooter, userLocation: locationManager.userLocation)
-                    .frame(height: 300)      // Adjust height as needed.
-                    .background(Color.white) // Background for the overlay.
-                    .cornerRadius(20)
-                    .shadow(radius: 10)
-                    .padding(.horizontal)
-                    .transition(.move(edge: .bottom))
-                    // Optional: add a drag gesture to dismiss the overlay.
-                    .gesture(
-                        DragGesture()
-                            .onEnded { value in
-                                if value.translation.height > 100 {
-                                    withAnimation {
-                                        selectedScooter = nil
-                                    }
-                                }
-                            }
-                    )
-            }
-            // Allow interaction with the map above the overlay.
-            .allowsHitTesting(true)
-        }
+       
     }
     .onAppear {
         scooterVM.fetchScooters()
+        
     }
+
     .sheet(isPresented: $showQRScanner) {
-        QRScannerScreen { scannedID in
-            if let scooter = scooterVM.scooters.first(where: { $0.id == scannedID }) {
-                scannedScooter = scooter
-                showUnlockPopup = true
-            }
-            showQRScanner = false
+      QRScannerScreen { rawCode in
+        let code = rawCode
+          .trimmingCharacters(in: .whitespacesAndNewlines)
+          .lowercased()
+
+        if let scooter = scooterVM.scooters.first(
+             where: { $0.id?.lowercased() == code }
+           ) {
+          scannedScooter   = scooter
+          showUnlockPopup = true
+        } else {
+          showInvalidCodeAlert = true
         }
+        showQRScanner = false
+      }
     }
     .alert(isPresented: $showUnlockPopup) {
-        Alert(
-            title: Text("Pay & Unlock Scooter"),
-            message: Text("Do you want to pay & unlock \(scannedScooter?.name ?? "this scooter")?"),
-            primaryButton: .default(Text("Pay & Unlock"), action: {
-                PaymentHandler.shared.startPayment()
-                if let scooter = scannedScooter {
-                    scooterVM.unlockScooter(scooter) { success in
-                        print(success ? "Scooter unlocked (simulated)" : "Unlock failed (simulated)")
-                    }
+      Alert(
+        title: Text("Pay & Unlock Scooter"),
+        message: Text("Do you want to pay & unlock \(scannedScooter?.name ?? "this scooter")?"),
+        primaryButton: .default(Text("Pay & Unlock")) {
+          // kick off the payment (mock or real) and wait for its result
+          DispatchQueue.main.async {
+            PaymentHandler.shared.startPayment { success in
+              if success, let scooter = scannedScooter {
+                scooterVM.unlockScooter(scooter) { unlocked in
+                  print(unlocked ? "✅ Unlocked" : "❌ Unlock failed")
                 }
-            }),
-            secondaryButton: .cancel()
+              } else {
+                print("❌ Payment failed or cancelled")
+              }
+            }
+          }
+        },
+        secondaryButton: .cancel()
+      )
+    }
+
+    .alert(isPresented: $showInvalidCodeAlert) {
+      Alert(
+        title: Text("Invalid Code"),
+        message: Text("No scooter found with that code. Please try again."),
+        dismissButton: .default(Text("OK"))
+      )
+    }
+    .sheet(isPresented: $showDetail, onDismiss: {
+        selectedScooter = nil
+      }) {
+      if let scooter = selectedScooter {
+        ScooterDetailView(
+          scooter: scooter,
+          userLocation: locationManager.userLocation
         )
+        .presentationDetents([.medium, .large])   // requires iOS 16+
+      }
     }
 }
 }
+
+

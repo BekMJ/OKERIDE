@@ -9,6 +9,7 @@ class AuthViewModel: ObservableObject {
         self.user = Auth.auth().currentUser
     }
     
+    
     func signIn(email: String, password: String, rememberPassword: Bool, onSuccess: @escaping () -> Void, onFailure: @escaping (String) -> Void) {
         Auth.auth().signIn(withEmail: email, password: password) { result, error in
             if let error = error {
@@ -38,5 +39,16 @@ class AuthViewModel: ObservableObject {
         } catch {
             print("Error signing out: \(error.localizedDescription)")
         }
+    }
+    /// Hard-coded list of emails or UIDs that should be treated as admins
+    private let adminEmails: Set<String> = [
+        "alice@oke-ride.com",
+        "bob@oke-ride.com"
+    ]
+    
+    /// True if the signed-in user is in that list
+    var isAdmin: Bool {
+        guard let email = user?.email?.lowercased() else { return false }
+        return adminEmails.contains(email)
     }
 }
