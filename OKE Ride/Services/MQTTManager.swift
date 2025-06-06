@@ -7,32 +7,57 @@ import Combine
 
 /// Manages the MQTT connection, subscriptions, and message publishing.
 class MQTTManager: NSObject, ObservableObject {
-    // MARK: - Shared Instance
+    //    MARK: — Shared Instance
     static let shared = MQTTManager()
 
-    // MARK: - Public Publisher
+    //    MARK: — Public Publisher
     /// Emits (topic, payload) tuples for any incoming messages.
     let messagePublisher = PassthroughSubject<(topic: String, payload: String), Never>()
 
-    // MARK: - Internal
+    //    MARK: — Internal
     private var mqttClient: CocoaMQTT!
-    private let host = "your.mqtt.broker.com"    // ← Replace with your broker address
-    private let port: UInt16 = 1883               // ← Replace if different
-    private let username: String? = nil           // ← Optional: set if your broker requires auth
-    private let password: String? = nil
 
+    /// 1) Replace with your broker’s hostname
+    private let host = "gust.caps.ou.edu"
+    /// 2) Use TLS port 8883 (standard for secure MQTT)
+    private let port: UInt16 = 8883
+
+    /// 3) Fill in the username/password you set up on the broker
+    private let username: String? = "okeride_user"      // ← e.g. “okeride_user”
+    private let password: String? = "someStrongPass"    // ← e.g. “vl%$kj3@!”
+
+    //    MARK: — Init
     private override init() {
         super.init()
-        let clientID = "iOS-Client-" + UUID().uuidString
-        mqttClient = CocoaMQTT(clientID: clientID, host: host, port: port)
+
+        // 4) Build a unique clientID; in your case you said “OKEride_VEHID”.
+        //    We’ll let the app supply the VEHID at runtime via setClientID(_:)
+        let defaultClientID = "OKEride_Client-Unset"
+        mqttClient = CocoaMQTT(
+            clientID: defaultClientID,
+            host:     host,
+            port:     port
+        )
+
+        // 5) Enable TLS (because port 8883 expects SSL)
+        mqttClient.enableSSL = true
+        // 6) Set credentials
         mqttClient.username = username
         mqttClient.password = password
+
         mqttClient.keepAlive = 60
         mqttClient.autoReconnect = true
         mqttClient.delegate = self
     }
 
-    // MARK: - Connection
+    //    MARK: — Client-ID Setter
+    /// Call this *before* connect() so that “OKEride_{VEHID}” is used.
+    func setClientID(to vehID: String) {
+        // For example “OKEride_ab12cd”
+        mqttClient.clientID = "OKEride_\(vehID)"
+    }
+
+    //    MARK: — Connection
     func connect() {
         mqttClient.connect()
     }
@@ -41,7 +66,7 @@ class MQTTManager: NSObject, ObservableObject {
         mqttClient.disconnect()
     }
 
-    // MARK: - Subscriptions
+    //    MARK: — Subscriptions
     func subscribe(to topic: String) {
         mqttClient.subscribe(topic, qos: .qos1)
     }
@@ -50,20 +75,27 @@ class MQTTManager: NSObject, ObservableObject {
         mqttClient.unsubscribe(topic)
     }
 
-    // MARK: - Publishing
+    //    MARK: — Publishing
+    /// Publish a raw string payload to any topic
     func publish(_ topic: String, message: String) {
         mqttClient.publish(topic, withString: message, qos: .qos1)
     }
 
     /// Helper to send an unlock command for a specific scooter.
+    /// Rather than “scooter/{id}/command”,
+    /// you want to publish to “okeride/{id}/src” with your JSON.
     func publishUnlockCommand(for scooterID: String) {
-        let topic = "scooter/\(scooterID)/command"
-        let payload = "{ \"action\": \"unlock\" }"
-        publish(topic, message: payload)
+        let topic = "okeride/\(scooterID)/src"
+        let payload = """
+        {
+          "action": "unlock"
+        }
+        """
+        mqttClient.publish(topic, withString: payload, qos: .qos1)
     }
 }
 
-// MARK: - CocoaMQTTDelegate
+//    MARK: — CocoaMQTTDelegate
 extension MQTTManager: CocoaMQTTDelegate {
     func mqtt(_ mqtt: CocoaMQTT, didConnect host: String, port: Int) {
         print("✅ MQTT did connect to \(host):\(port)")
@@ -85,6 +117,7 @@ extension MQTTManager: CocoaMQTTDelegate {
         let topic = message.topic
         let payload = message.string ?? ""
         print("📥 Received [\(topic)]: \(payload)")
+        // Forward every incoming message onto our Combine pipeline
         messagePublisher.send((topic: topic, payload: payload))
     }
 
@@ -109,6 +142,7 @@ extension MQTTManager: CocoaMQTTDelegate {
     }
 
     func mqtt(_ mqtt: CocoaMQTT, didReceive trust: SecTrust, completionHandler: @escaping (Bool) -> Void) {
+        // Allow all TLS certs (for testing). In production, validate properly.
         completionHandler(true)
     }
 }

@@ -108,7 +108,7 @@ var body: some View {
     }
     .alert(isPresented: $showUnlockPopup) {
       Alert(
-        title: Text("Pay & Unlock Scooter"),
+        title: Text("Pay & Unlock Scooter")
         message: Text("Do you want to pay & unlock \(scannedScooter?.name ?? "this scooter")?"),
         primaryButton: .default(Text("Pay & Unlock")) {
           // kick off the payment (mock or real) and wait for its result
